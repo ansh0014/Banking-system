@@ -5,6 +5,7 @@ import (
 
 	"log"
 	"net/http"
+	"time"
 
 	"github.com/gorilla/mux"
 )
@@ -60,7 +61,7 @@ func NewAPIServer(listenAddr string, /*store Storage*/) *APIServer {
 
 // Handler examples
 func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error {
-	account := NewAccount("1", "John Doe", 1000.0)
+	account := NewAccount(1, "John", "Doe", "1234567890", 1000.0, time.Now())
 	writeJSON(w, http.StatusOK, account)
 	return nil
 }

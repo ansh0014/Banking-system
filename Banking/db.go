@@ -1,0 +1,58 @@
+package main
+
+import (
+	// "log"
+	"database/sql"
+	"log"
+
+	_ "github.com/lib/pq"
+
+	_ "github.com/lib/pq"
+)
+
+type Storage interface {
+	CreateAccount(*Account) error
+	DeleteAccount(int) error
+	UploadAccount(*Account) error
+	GetAccount(int) (*Account, error)
+}
+
+// Storage implementation struct
+type PostgresStore struct {
+	db *sql.DB
+}
+
+func initDB() *sql.DB {
+	db, err := sql.Open("postgres", "user=pqgotest dbname=pqgotest sslmode=verify-full")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return db
+}
+
+func (s *PostgresStore) CreateAccount(acc *Account) error {
+	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) VALUES ($1, $2, $3, $4, $5)`
+	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt)
+	return err
+}
+func (s *PostgresStore) DeleteAccount(id int) error {
+	query := `DELETE FROM account WHERE id = $1`
+	_, err := s.db.Exec(query, id)
+	return err
+}
+func (s *PostgresStore) UploadAccount(acc *Account) error {
+	query := `UPDATE account SET first_name = $1, last_name = $2, number = $3, balance = $4, created_at = $5 WHERE id = $6`
+	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt, acc.ID)
+	return err
+}
+func (s *PostgresStore) GetAccount(id int) (*Account, error) {
+	query := `SELECT * FROM account WHERE id = $1`
+	rows, err := s.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	return nil, nil
+}
