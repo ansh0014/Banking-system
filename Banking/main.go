@@ -5,6 +5,7 @@ import "log"
 func main() {
 	db := initDB()
 	defer db.Close()
+	// Starting port at 1000
 	
 	server := NewAPIServer(":1000")
 	log.Println("Server starting on port 1000...")
