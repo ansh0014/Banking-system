@@ -91,3 +91,11 @@ func (s *PostgresStore) GetAccountsbyID(id int) ([]*Account, error) {
 
 	return accounts, nil
 }
+func ScanAccount(rows *sql.Rows) (*Account, error) {
+	var acc Account
+	if err := rows.Scan(&acc.ID, &acc.FirstName, &acc.LastName, &acc.Number, &acc.Balance, &acc.CreatedAt); err != nil {
+		return nil, err
+	}
+	return &acc, nil
+}
+
