@@ -6,8 +6,6 @@ import (
 	"log"
 
 	_ "github.com/lib/pq"
-
-	_ "github.com/lib/pq"
 )
 
 type Storage interface {
@@ -30,7 +28,7 @@ func initDB() *sql.DB {
 
 	return db
 }
-func (s*PostgresStore) CreatAccountTable(acc *Account) error {
+func (s *PostgresStore) CreatAccountTable(acc *Account) error {
 	query := `CREATE TABLE Account IF NOT EXISTS account (
 		id SERIAL PRIMARY KEY,
 		first_name VARCHAR(50) NOT NULL,
