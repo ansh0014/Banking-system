@@ -10,7 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 
-	
+	"strconv"
 
 	_ "github.com/lib/pq"
 )
@@ -81,12 +81,21 @@ func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleGetAccountbyID(w http.ResponseWriter, r *http.Request) error {
-	id := mux.Vars(r)["id"]
-	fmt.Print("id:", id)
+	idStr := mux.Vars(r)["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return fmt.Errorf("invalid account ID: %s", idStr)
+	}
 
-	writeJSON(w, http.StatusOK, &Account{})
-	return nil
+	account, err := s.store.GetAccount(id)
+	if err != nil {
+		return fmt.Errorf("error getting account with ID %d: %v", id, err)
+	}
+
+	 writeJSON(w, http.StatusOK, account)
+	 return nil
 }
+
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
 	var req CreatAccountRequest
