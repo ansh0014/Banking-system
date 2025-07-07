@@ -2,15 +2,17 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 
 	"log"
 	"net/http"
 	"time"
 
 	"github.com/gorilla/mux"
+
 	
+
 	_ "github.com/lib/pq"
-	"strconv"
 )
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -70,26 +72,19 @@ func (s *APIServer) handleAccount(w http.ResponseWriter, r *http.Request) error 
 }
 
 func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) error {
-	if err := r.ParseForm(); err != nil {
+	account, err := s.store.GetAccount(1) // Example ID, replace with actual logic
+	if err != nil {
 		return err
-
 	}
+	writeJSON(w, http.StatusOK, account)
 	return nil
 }
+
 func (s *APIServer) handleGetAccountbyID(w http.ResponseWriter, r *http.Request) error {
-	vars := mux.Vars(r)
-	idStr := vars["id"]
-	id, err := strconv.Atoi(idStr)
-	if err != nil {
-		return err
-	}
+	id := mux.Vars(r)["id"]
+	fmt.Print("id:", id)
 
-	accounts, err := s.store.GetAccountsbyID(id)
-	if err != nil {
-		return err
-	}
-
-	writeJSON(w, http.StatusOK, accounts)
+	writeJSON(w, http.StatusOK, &Account{})
 	return nil
 }
 
