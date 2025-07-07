@@ -8,6 +8,8 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	// "github.com/jmoiron/sqlx"
+	_ "github.com/lib/pq"
 )
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -35,7 +37,7 @@ func makeHandler(fn apiFunc) http.HandlerFunc {
 
 type APIServer struct {
 	listenAddr string
-	// store      Storage
+	store      Storage
 }
 
 func (s *APIServer) Run() error {
@@ -52,10 +54,10 @@ func (s *APIServer) Run() error {
 	return http.ListenAndServe(s.listenAddr, r)
 }
 
-func NewAPIServer(listenAddr string, /*store Storage*/) *APIServer {
+func NewAPIServer(listenAddr string, store Storage) *APIServer {
 	return &APIServer{
 		listenAddr: listenAddr,
-		// store:      store,
+		store:      store,
 	}
 }
 
@@ -75,9 +77,16 @@ func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 }
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	if err := r.ParseForm(); err != nil {
+	var req CreatAccountRequest
+	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return err
 	}
+	account := NewAccount(0, req.FirstName, req.LastName, req.Number, req.Balance, time.Now())
+	if err := s.store.CreateAccount(account); err != nil {
+		return err
+	}
+	writeJSON(w, http.StatusCreated, account)
 	return nil
 }
 
