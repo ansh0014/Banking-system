@@ -30,6 +30,23 @@ func initDB() *sql.DB {
 
 	return db
 }
+func (s*PostgresStore) CreatAccountTable(acc *Account) error {
+	query := `CREATE TABLE Account IF NOT EXISTS account (
+		id SERIAL PRIMARY KEY,
+		first_name VARCHAR(50) NOT NULL,
+		last_name VARCHAR(50) NOT NULL,
+		number VARCHAR(20) NOT NULL UNIQUE,
+		balance DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
+		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+	)`
+	_, err := s.db.Exec(query)
+	if err != nil {
+		log.Fatal(err)
+		return err
+	}
+	return nil
+
+}
 
 func (s *PostgresStore) CreateAccount(acc *Account) error {
 	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) VALUES ($1, $2, $3, $4, $5)`
