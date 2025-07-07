@@ -13,6 +13,7 @@ type Storage interface {
 	DeleteAccount(int) error
 	UploadAccount(*Account) error
 	GetAccount(int) (*Account, error)
+	GetAccountsbyID(int) ([]*Account, error)
 }
 
 // Storage implementation struct
@@ -70,4 +71,23 @@ func (s *PostgresStore) GetAccount(id int) (*Account, error) {
 	defer rows.Close()
 
 	return nil, nil
+}
+func (s *PostgresStore) GetAccountsbyID(id int) ([]*Account, error) {
+	query := `SELECT * FROM account WHERE id = $1`
+	rows, err := s.db.Query(query, id)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var accounts []*Account
+	for rows.Next() {
+		var acc Account
+		if err := rows.Scan(&acc.ID, &acc.FirstName, &acc.LastName, &acc.Number, &acc.Balance, &acc.CreatedAt); err != nil {
+			return nil, err
+		}
+		accounts = append(accounts, &acc)
+	}
+
+	return accounts, nil
 }

@@ -8,8 +8,9 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
-	// "github.com/jmoiron/sqlx"
+	
 	_ "github.com/lib/pq"
+	"strconv"
 )
 
 func writeJSON(w http.ResponseWriter, status int, data interface{}) {
@@ -73,6 +74,22 @@ func (s *APIServer) handleGetAccount(w http.ResponseWriter, r *http.Request) err
 		return err
 
 	}
+	return nil
+}
+func (s *APIServer) handleGetAccountbyID(w http.ResponseWriter, r *http.Request) error {
+	vars := mux.Vars(r)
+	idStr := vars["id"]
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		return err
+	}
+
+	accounts, err := s.store.GetAccountsbyID(id)
+	if err != nil {
+		return err
+	}
+
+	writeJSON(w, http.StatusOK, accounts)
 	return nil
 }
 
