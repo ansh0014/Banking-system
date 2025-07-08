@@ -5,6 +5,7 @@ import (
 	"log"
 	"time"
 
+	"fmt"
 	_ "github.com/lib/pq"
 )
 
@@ -16,9 +17,10 @@ type Storage interface {
 	GetAccount(int) (*Account, error)
 	GetAccountsByID(int) ([]*Account, error)
 	CreateAccountTable() error
+	Userlogin(int) (*User, error)
 }
 
-// ===== DB Wrapper Struct =====
+// / ===== DB Wrapper Struct =====
 type PostgresStore struct {
 	db *sql.DB
 }
@@ -42,7 +44,7 @@ func initDB() *sql.DB {
 	return db
 }
 
-// ===== Create Table If Not Exists =====
+// ===== Create Account Table =====
 func (s *PostgresStore) CreateAccountTable() error {
 	query := `
 	CREATE TABLE IF NOT EXISTS account (
@@ -111,6 +113,23 @@ func (s *PostgresStore) GetAccountsByID(id int) ([]*Account, error) {
 		accounts = append(accounts, &acc)
 	}
 	return accounts, nil
+}
+
+// ===== Get User by ID for Login =====
+func (s *PostgresStore) Userlogin(id int) (*User, error) {
+	query := `SELECT id, username, password FROM users WHERE id = $1`
+	row := s.db.QueryRow(query, id)
+
+	var user User
+	err := row.Scan(&user.ID, &user.Username, &user.Password)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, fmt.Errorf("user not found")
+		}
+		return nil, err
+	}
+
+	return &user, nil
 }
 
 // ===== Row Scan Helper =====
