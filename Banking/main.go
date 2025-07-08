@@ -1,11 +1,28 @@
 package main
 
-import "log"
+import (
+	"log"
+	"fmt"
+)
 
 func main() {
 	db := initDB()
 	defer db.Close()
 	// Starting port at 1000
+		token, err := GenerateJWT()
+	if err != nil {
+		fmt.Printf("Error generating token: %v\n", err)
+		return
+	}
+	fmt.Printf("Generated Token: %s\n", token)
+
+	// Validate the JWT
+	err = ValidateJWT(token)
+	if err != nil {
+		fmt.Printf("Error validating token: %v\n", err)
+	} else {
+		fmt.Println("Token validation successful!")
+	}
 	
 	Storage := &PostgresStore{db: db}
 	server := NewAPIServer(":1000", Storage)

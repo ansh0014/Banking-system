@@ -155,10 +155,10 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 	toAccount.Balance += req.Amount
 
 	// Save updates
-	if err := s.store.UploadAccount(fromAccount); err != nil {
+	if err := s.store.UpdateAccount(fromAccount); err != nil {
 		return fmt.Errorf("failed to update from_account: %v", err)
 	}
-	if err := s.store.UploadAccount(toAccount); err != nil {
+	if err := s.store.UpdateAccount(toAccount); err != nil {
 		return fmt.Errorf("failed to update to_account: %v", err)
 	}
 
