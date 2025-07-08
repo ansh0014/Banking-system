@@ -119,6 +119,61 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request) error {
-	// TODO: Implement this later
+	var req TransferAccountRequest
+
+	// Parse and validate JSON
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return fmt.Errorf("invalid request body: %v", err)
+	}
+	req.CreatedAt = time.Now()
+
+	if req.FromAccountID == req.ToAccountID {
+		return fmt.Errorf("cannot transfer to the same account")
+	}
+	if req.Amount <= 0 {
+		return fmt.Errorf("amount must be greater than 0")
+	}
+
+	// Fetch sender and receiver accounts
+	fromAccount, err := s.store.GetAccount(req.FromAccountID)
+	if err != nil {
+		return fmt.Errorf("from_account not found: %v", err)
+	}
+
+	toAccount, err := s.store.GetAccount(req.ToAccountID)
+	if err != nil {
+		return fmt.Errorf("to_account not found: %v", err)
+	}
+
+	// Check balance
+	if fromAccount.Balance < req.Amount {
+		return fmt.Errorf("insufficient balance in from_account")
+	}
+
+	// Update balances
+	fromAccount.Balance -= req.Amount
+	toAccount.Balance += req.Amount
+
+	// Save updates
+	if err := s.store.UploadAccount(fromAccount); err != nil {
+		return fmt.Errorf("failed to update from_account: %v", err)
+	}
+	if err := s.store.UploadAccount(toAccount); err != nil {
+		return fmt.Errorf("failed to update to_account: %v", err)
+	}
+
+	// Optional: log the transfer somewhere
+
+	// Send response
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"message":          "transfer successful",
+		"from_account_id":  fromAccount.ID,
+		"to_account_id":    toAccount.ID,
+		"from_balance":     fromAccount.Balance,
+		"to_balance":       toAccount.Balance,
+		"transferred_at":   req.CreatedAt,
+	})
+
 	return nil
 }
+
