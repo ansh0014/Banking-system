@@ -1,36 +1,45 @@
 package main
 
 import (
-	// "log"
 	"database/sql"
 	"log"
+
+	// "time"
 
 	_ "github.com/lib/pq"
 )
 
+// ========== Storage Interface ==========
 type Storage interface {
 	CreateAccount(*Account) error
 	DeleteAccount(int) error
 	UploadAccount(*Account) error
 	GetAccount(int) (*Account, error)
 	GetAccountsbyID(int) ([]*Account, error)
+	CreateAccountTable() error
 }
 
-// Storage implementation struct
+// ========== DB Struct ==========
 type PostgresStore struct {
 	db *sql.DB
 }
 
+// ========== Init DB ==========
 func initDB() *sql.DB {
-	db, err := sql.Open("postgres", "user=pqgotest dbname=pqgotest sslmode=verify-full")
+	db, err := sql.Open("postgres", "user=pqgotest dbname=pqgotest sslmode=disable") // <-- change creds here
 	if err != nil {
 		log.Fatal(err)
 	}
-
+	if err := db.Ping(); err != nil {
+		log.Fatal(err)
+	}
 	return db
 }
-func (s *PostgresStore) CreatAccountTable(acc *Account) error {
-	query := `CREATE TABLE Account IF NOT EXISTS account (
+
+// ========== Create Table ==========
+func (s *PostgresStore) CreateAccountTable() error {
+	query := `
+	CREATE TABLE IF NOT EXISTS account (
 		id SERIAL PRIMARY KEY,
 		first_name VARCHAR(50) NOT NULL,
 		last_name VARCHAR(50) NOT NULL,
@@ -39,41 +48,41 @@ func (s *PostgresStore) CreatAccountTable(acc *Account) error {
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`
 	_, err := s.db.Exec(query)
-	if err != nil {
-		log.Fatal(err)
-		return err
-	}
-	return nil
-
+	return err
 }
 
+// ========== Create ==========
 func (s *PostgresStore) CreateAccount(acc *Account) error {
-	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) VALUES ($1, $2, $3, $4, $5)`
+	query := `INSERT INTO account (first_name, last_name, number, balance, created_at) 
+	          VALUES ($1, $2, $3, $4, $5)`
 	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt)
 	return err
 }
+
+// ========== Delete ==========
 func (s *PostgresStore) DeleteAccount(id int) error {
 	query := `DELETE FROM account WHERE id = $1`
 	_, err := s.db.Exec(query, id)
 	return err
 }
+
+// ========== Update ==========
 func (s *PostgresStore) UploadAccount(acc *Account) error {
 	query := `UPDATE account SET first_name = $1, last_name = $2, number = $3, balance = $4, created_at = $5 WHERE id = $6`
 	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt, acc.ID)
 	return err
 }
-func (s *PostgresStore) GetAccount(id int) (*Account, error) {
-	query := `SELECT * FROM account WHERE id = $1`
-	rows, err := s.db.Query(query, id)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
 
-	return nil, nil
+// ========== Get by ID ==========
+func (s *PostgresStore) GetAccount(id int) (*Account, error) {
+	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
+	row := s.db.QueryRow(query, id)
+	return ScanAccount(row)
 }
+
+// ========== Get All with Same ID ==========
 func (s *PostgresStore) GetAccountsbyID(id int) ([]*Account, error) {
-	query := `SELECT * FROM account WHERE id = $1`
+	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
 	rows, err := s.db.Query(query, id)
 	if err != nil {
 		return nil, err
@@ -88,14 +97,16 @@ func (s *PostgresStore) GetAccountsbyID(id int) ([]*Account, error) {
 		}
 		accounts = append(accounts, &acc)
 	}
-
 	return accounts, nil
 }
-func ScanAccount(rows *sql.Rows) (*Account, error) {
+
+// ========== Scan Helpers ==========
+
+func ScanAccount(row *sql.Row) (*Account, error) {
 	var acc Account
-	if err := rows.Scan(&acc.ID, &acc.FirstName, &acc.LastName, &acc.Number, &acc.Balance, &acc.CreatedAt); err != nil {
+	err := row.Scan(&acc.ID, &acc.FirstName, &acc.LastName, &acc.Number, &acc.Balance, &acc.CreatedAt)
+	if err != nil {
 		return nil, err
 	}
 	return &acc, nil
 }
-
