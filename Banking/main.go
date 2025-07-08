@@ -25,10 +25,12 @@ func main() {
 	}
 	
 	Storage := &PostgresStore{db: db}
+	if err := Storage.CreateAccountTable(); err != nil {
+		log.Fatalf("Failed to create account table: %v", err)
+	}
 	server := NewAPIServer(":1000", Storage)
 	log.Println("Server starting on port 1000...")
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server failed: %v", err)
-	
 	}
 }

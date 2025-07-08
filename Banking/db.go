@@ -26,7 +26,11 @@ type PostgresStore struct {
 
 // ========== Init DB ==========
 func initDB() *sql.DB {
-	db, err := sql.Open("postgres", "user=pqgotest dbname=pqgotest sslmode=disable") // <-- change creds here
+	config, err := LoadConfig()
+	if err != nil {
+		log.Fatal("Failed to load configuration:", err)
+	}
+	db, err := sql.Open("postgres", config.PostgresURL)
 	if err != nil {
 		log.Fatal(err)
 	}

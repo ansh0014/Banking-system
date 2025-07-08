@@ -7,10 +7,17 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 )
 
-var secretKey = []byte("your-secret-key") // Replace with a secure key
-
-// GenerateJWT creates a new JWT token
+// GenerateJWT creates a new JWT token using the configured secret key
 func GenerateJWT() (string, error) {
+	config, err := LoadConfig()
+	if err != nil {
+		return "", fmt.Errorf("failed to load configuration: %v", err)
+	}
+	secretKey := []byte(config.JWTKey)
+	if len(secretKey) == 0 {
+		return "", fmt.Errorf("JWT key is not configured")
+	}
+
 	claims := jwt.MapClaims{
 		"username": "exampleUser",
 		"exp":      time.Now().Add(time.Hour * 1).Unix(), // Token expires in 1 hour
@@ -20,8 +27,17 @@ func GenerateJWT() (string, error) {
 	return token.SignedString(secretKey)
 }
 
-// ValidateJWT parses and validates a JWT token
+// ValidateJWT parses and validates a JWT token using the configured secret key
 func ValidateJWT(tokenString string) error {
+	config, err := LoadConfig()
+	if err != nil {
+		return fmt.Errorf("failed to load configuration: %v", err)
+	}
+	secretKey := []byte(config.JWTKey)
+	if len(secretKey) == 0 {
+		return fmt.Errorf("JWT key is not configured")
+	}
+
 	token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
 		// Ensure the signing method is as expected
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
@@ -42,5 +58,3 @@ func ValidateJWT(tokenString string) error {
 
 	return fmt.Errorf("invalid token")
 }
-
-
