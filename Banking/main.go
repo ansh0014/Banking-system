@@ -9,7 +9,7 @@ func main() {
 	db := initDB()
 	defer db.Close()
 	// Starting port at 1000
-		token, err := GenerateJWT()
+		token, err := GenerateJWT("exampleUser")
 	if err != nil {
 		fmt.Printf("Error generating token: %v\n", err)
 		return

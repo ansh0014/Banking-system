@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"time"
+	"github.com/golang-jwt/jwt/v5"
+)
 
 type CreatAccountRequest struct {
 	FirstName string `json:"first_name"`
@@ -22,6 +25,17 @@ type Account struct {
 	Number    string    `json:"number"`
 	Balance   float64   `json:"balance"`
 	CreatedAt time.Time `json:"created_at"`
+}
+// User struct
+type User struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+// JWT Claims
+type Claims struct {
+	Username string `json:"username"`
+	jwt.RegisteredClaims
 }
 
 func NewAccount(id int, firstName, lastName, number string, balance float64, createdAt time.Time) *Account {

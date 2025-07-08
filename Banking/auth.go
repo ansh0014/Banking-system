@@ -8,7 +8,7 @@ import (
 )
 
 // GenerateJWT creates a new JWT token using the configured secret key
-func GenerateJWT() (string, error) {
+func GenerateJWTWithUsername(username string) (string, error) {
 	config, err := LoadConfig()
 	if err != nil {
 		return "", fmt.Errorf("failed to load configuration: %v", err)
@@ -19,8 +19,8 @@ func GenerateJWT() (string, error) {
 	}
 
 	claims := jwt.MapClaims{
-		"username": "exampleUser",
-		"exp":      time.Now().Add(time.Hour * 1).Unix(), // Token expires in 1 hour
+		"username": username,
+		"exp":      time.Now().Add(time.Hour * 1).Unix(),
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
