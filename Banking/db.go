@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 	_ "github.com/lib/pq"
+"golang.org/x/crypto/bcrypt"
 )
 
 // ===== Interface for Account Operations =====
@@ -17,7 +18,9 @@ type Storage interface {
 	GetAccount(int) (*Account, error)
 	GetAccountsByID(int) ([]*Account, error)
 	CreateAccountTable() error
-	Userlogin(int) (*User, error)
+	Userlogin(username, password string) (*User, error)
+	CreateUsersTable() error
+	
 }
 
 // / ===== DB Wrapper Struct =====
@@ -114,11 +117,21 @@ func (s *PostgresStore) GetAccountsByID(id int) ([]*Account, error) {
 	}
 	return accounts, nil
 }
+func (s *PostgresStore) CreateUsersTable() error {
+    query := `CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        username VARCHAR(50) NOT NULL UNIQUE,
+        password VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )`
+    _, err := s.db.Exec(query)
+    return err
+}
 
-// ===== Get User by ID for Login =====
-func (s *PostgresStore) Userlogin(id int) (*User, error) {
-	query := `SELECT id, username, password FROM users WHERE id = $1`
-	row := s.db.QueryRow(query, id)
+// ===== Get User by Username for Login =====
+func (s *PostgresStore) Userlogin(username, password string) (*User, error) {
+	query := `SELECT id, username, password FROM users WHERE username = $1`
+	row := s.db.QueryRow(query, username)
 
 	var user User
 	err := row.Scan(&user.ID, &user.Username, &user.Password)
@@ -127,6 +140,11 @@ func (s *PostgresStore) Userlogin(id int) (*User, error) {
 			return nil, fmt.Errorf("user not found")
 		}
 		return nil, err
+	}
+
+	// Verify password using bcrypt
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(password)); err != nil {
+		return nil, fmt.Errorf("invalid password")
 	}
 
 	return &user, nil

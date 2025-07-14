@@ -51,6 +51,7 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 
 func (s *APIServer) Run() error {
 	r := mux.NewRouter()
+	r.HandleFunc("/userlogin", makeHandler(s.handleUserLogin)).Methods("POST")
 
 	r.HandleFunc("/account/transfer", makeHandler(s.handleTransferAccount)).Methods("POST")
 	r.HandleFunc("/account/{id:[0-9]+}", makeHandler(s.handleGetAccountbyID)).Methods("GET")
@@ -174,6 +175,28 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 		"transferred_at":   req.CreatedAt,
 	})
 
+	return nil
+}
+func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) error {
+	var req User
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return fmt.Errorf("invalid request body: %v", err)
+	}
+	// Validate the user credentials
+	user, err := s.store.Userlogin(req.Username, req.Password)
+	if err != nil {
+		return fmt.Errorf("invalid username or password")
+	}
+
+	// Generate and return a JWT token
+	token, err := GenerateJWT(user.Username)
+	if err!= nil {
+		return fmt.Errorf("failed to generate JWT token: %v", err)
+	}
+	// Return the token in the response
+	writeJSON(w, http.StatusOK, map[string]interface{}{
+		"token": token,
+	})
 	return nil
 }
 
