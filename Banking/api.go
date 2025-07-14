@@ -10,6 +10,7 @@ import (
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // ========== Utility ==========
@@ -51,6 +52,7 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 
 func (s *APIServer) Run() error {
 	r := mux.NewRouter()
+	 r.HandleFunc("/register", makeHandler(s.handleUserRegister)).Methods("POST")
 	r.HandleFunc("/userlogin", makeHandler(s.handleUserLogin)).Methods("POST")
 
 	r.HandleFunc("/account/transfer", makeHandler(s.handleTransferAccount)).Methods("POST")
@@ -167,15 +169,45 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 
 	// Send response
 	writeJSON(w, http.StatusOK, map[string]interface{}{
-		"message":          "transfer successful",
-		"from_account_id":  fromAccount.ID,
-		"to_account_id":    toAccount.ID,
-		"from_balance":     fromAccount.Balance,
-		"to_balance":       toAccount.Balance,
-		"transferred_at":   req.CreatedAt,
+		"message":         "transfer successful",
+		"from_account_id": fromAccount.ID,
+		"to_account_id":   toAccount.ID,
+		"from_balance":    fromAccount.Balance,
+		"to_balance":      toAccount.Balance,
+		"transferred_at":  req.CreatedAt,
 	})
 
 	return nil
+}
+func (s *APIServer) handleUserRegister(w http.ResponseWriter, r *http.Request) error {
+	var req User
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		return fmt.Errorf("invalid request body: %v", err)
+	}
+
+	// Validate required fields
+	if req.Username == "" || req.Password == "" {
+		return fmt.Errorf("username and password are required")
+	}
+
+	// Hash password
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return fmt.Errorf("error hashing password: %v", err)
+	}
+	req.Password = string(hashedPassword)
+
+	// Save user
+	if err := s.store.CreateUser(&req); err != nil {
+		return fmt.Errorf("error creating user: %v", err)
+	}
+
+ writeJSON(w, http.StatusCreated, map[string]string{
+		"message":  "user created successfully",
+		"username": req.Username,
+	} )
+	return nil
+   
 }
 func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) error {
 	var req User
@@ -190,7 +222,7 @@ func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) erro
 
 	// Generate and return a JWT token
 	token, err := GenerateJWT(user.Username)
-	if err!= nil {
+	if err != nil {
 		return fmt.Errorf("failed to generate JWT token: %v", err)
 	}
 	// Return the token in the response
@@ -199,4 +231,3 @@ func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) erro
 	})
 	return nil
 }
-

@@ -2,12 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"time"
 
-	"fmt"
 	_ "github.com/lib/pq"
-"golang.org/x/crypto/bcrypt"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // ===== Interface for Account Operations =====
@@ -19,8 +19,8 @@ type Storage interface {
 	GetAccountsByID(int) ([]*Account, error)
 	CreateAccountTable() error
 	Userlogin(username, password string) (*User, error)
-	CreateUsersTable() error
-	
+	CreateUser(*User) error
+	CreateUsersTable() error // This is for table creation only
 }
 
 // / ===== DB Wrapper Struct =====
@@ -117,15 +117,16 @@ func (s *PostgresStore) GetAccountsByID(id int) ([]*Account, error) {
 	}
 	return accounts, nil
 }
+
 func (s *PostgresStore) CreateUsersTable() error {
-    query := `CREATE TABLE IF NOT EXISTS users (
+	query := `CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         username VARCHAR(50) NOT NULL UNIQUE,
         password VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
-    _, err := s.db.Exec(query)
-    return err
+	_, err := s.db.Exec(query)
+	return err
 }
 
 // ===== Get User by Username for Login =====
@@ -148,6 +149,26 @@ func (s *PostgresStore) Userlogin(username, password string) (*User, error) {
 	}
 
 	return &user, nil
+}
+
+// ===== Insert New User =====
+func (s *PostgresStore) CreateUser(user *User) error {
+	query := `
+        INSERT INTO users (username, password, created_at)
+        VALUES ($1, $2, $3)
+        RETURNING id`
+
+	err := s.db.QueryRow(
+		query,
+		user.Username,
+		user.Password,
+		time.Now(),
+	).Scan(&user.ID)
+
+	if err != nil {
+		return fmt.Errorf("error creating user: %v", err)
+	}
+	return nil
 }
 
 // ===== Row Scan Helper =====
