@@ -31,9 +31,9 @@ type ApiError struct {
 	Error string `json:"error"`
 }
 
-func makeHandler(fn apiFunc) http.HandlerFunc {
+func makeHandler(f apiFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		if err := fn(w, r); err != nil {
+		if err := f(w, r); err != nil {
 			writeJSON(w, http.StatusBadRequest, ApiError{Error: err.Error()})
 		}
 	}
@@ -52,7 +52,7 @@ func NewAPIServer(listenAddr string, store Storage) *APIServer {
 
 func (s *APIServer) Run() error {
 	r := mux.NewRouter()
-	 r.HandleFunc("/register", makeHandler(s.handleUserRegister)).Methods("POST")
+	r.HandleFunc("/register", makeHandler(s.handleUserRegister)).Methods("POST")
 	r.HandleFunc("/userlogin", makeHandler(s.handleUserLogin)).Methods("POST")
 
 	r.HandleFunc("/account/transfer", makeHandler(s.handleTransferAccount)).Methods("POST")
@@ -202,12 +202,12 @@ func (s *APIServer) handleUserRegister(w http.ResponseWriter, r *http.Request) e
 		return fmt.Errorf("error creating user: %v", err)
 	}
 
- writeJSON(w, http.StatusCreated, map[string]string{
+	writeJSON(w, http.StatusCreated, map[string]string{
 		"message":  "user created successfully",
 		"username": req.Username,
-	} )
+	})
 	return nil
-   
+
 }
 func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) error {
 	var req User
