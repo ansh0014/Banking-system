@@ -62,6 +62,11 @@ func (s *PostgresStore) CreateAccountTable() error {
 	return err
 }
 
+
+
+
+
+
 // ===== Insert New Account =====
 func (s *PostgresStore) CreateAccount(acc *Account) error {
 	query := `
