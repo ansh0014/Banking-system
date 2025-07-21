@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	// "debug/elf"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -8,7 +9,8 @@ import (
 	"strconv"
 	"time"
 
-	"Bank/config"
+	// "Bank/config"
+	"Bank/Authantication"
 	"Bank/db"
 	"Bank/models"
 
@@ -94,12 +96,12 @@ func (s *APIServer) handleGetAccountbyID(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *APIServer) handleCreateAccount(w http.ResponseWriter, r *http.Request) error {
-	var req CreatAccountRequest
+	var req model.CreatAccountRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return err
 	}
 
-	account := NewAccount(0, req.FirstName, req.LastName, req.Number, req.Balance, time.Now())
+	account := model.NewAccount(0, req.FirstName, req.LastName, req.Number, req.Balance, time.Now())
 	if err := s.store.CreateAccount(account); err != nil {
 		return err
 	}
@@ -126,7 +128,7 @@ func (s *APIServer) handleDeleteAccount(w http.ResponseWriter, r *http.Request) 
 }
 
 func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request) error {
-	var req TransferAccountRequest
+	var req model.TransferAccountRequest
 
 	// Parse and validate JSON
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -134,7 +136,7 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 	}
 	req.CreatedAt = time.Now()
 
-	if req.FromAccountID == req.ToAccountID {
+	if  req.FromAccountID == req.ToAccountID {
 		return fmt.Errorf("cannot transfer to the same account")
 	}
 	if req.Amount <= 0 {
@@ -184,7 +186,7 @@ func (s *APIServer) handleTransferAccount(w http.ResponseWriter, r *http.Request
 	return nil
 }
 func (s *APIServer) handleUserRegister(w http.ResponseWriter, r *http.Request) error {
-	var req User
+	var req model.User
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return fmt.Errorf("invalid request body: %v", err)
 	}
@@ -214,7 +216,7 @@ func (s *APIServer) handleUserRegister(w http.ResponseWriter, r *http.Request) e
 
 }
 func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) error {
-	var req User
+	var req model.User
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		return fmt.Errorf("invalid request body: %v", err)
 	}
@@ -225,7 +227,7 @@ func (s *APIServer) handleUserLogin(w http.ResponseWriter, r *http.Request) erro
 	}
 
 	// Generate and return a JWT token
-	token, err := GenerateJWT(user.Username)
+	token, err := auth.GenerateJWTWithUsername(user.Username)
 	if err != nil {
 		return fmt.Errorf("failed to generate JWT token: %v", err)
 	}
