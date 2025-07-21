@@ -28,11 +28,11 @@ func main() {
 		fmt.Println("Token validation successful!")
 	}
 	
-	Storage := &db.Storage{db: db}
-	if err := Storage.CreateAccountTable(); err != nil {
+	storage := &db.PostgresStore{db: db}
+	if err := storage.CreateAccountTable(); err != nil {
 		log.Fatalf("Failed to create account table: %v", err)
 	}
-	server := controllers.NewAPIServer(":1000", Storage)
+	server := controllers.NewAPIServer(":1000", storage)
 	log.Println("Server starting on port 1000...")
 	if err := server.Run(); err != nil {
 		log.Fatalf("Server failed: %v", err)
