@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	db := db.initDB()
+	db := db.InitDB()
 	defer db.Close()
 	// Starting port at 1000
 		token, err := auth.GenerateJWT("exampleUser")
@@ -28,7 +28,7 @@ func main() {
 		fmt.Println("Token validation successful!")
 	}
 	
-	Storage := &db.PostgresStore{db: db}
+	Storage := &db.Storage{db: db}
 	if err := Storage.CreateAccountTable(); err != nil {
 		log.Fatalf("Failed to create account table: %v", err)
 	}

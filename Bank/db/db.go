@@ -31,7 +31,7 @@ type PostgresStore struct {
 }
 
 // ===== Initialize DB Connection =====
-func initDB() *sql.DB {
+func InitDB() *sql.DB {
 	config, err := config.LoadConfig()
 	if err != nil {
 		log.Fatal("Failed to load configuration:", err)
