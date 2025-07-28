@@ -27,8 +27,8 @@ func main() {
 	} else {
 		fmt.Println("Token validation successful!")
 	}
-	
-	storage := &db.PostgresStore{db: db}
+
+	storage := db.Postgres(db)
 	if err := storage.CreateAccountTable(); err != nil {
 		log.Fatalf("Failed to create account table: %v", err)
 	}

@@ -30,6 +30,7 @@ type PostgresStore struct {
 	db *sql.DB
 }
 
+
 // ===== Initialize DB Connection =====
 func InitDB() *sql.DB {
 	config, err := config.LoadConfig()
