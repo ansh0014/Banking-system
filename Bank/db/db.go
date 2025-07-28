@@ -27,7 +27,7 @@ type Storage interface {
 
 // / ===== DB Wrapper Struct =====
 type PostgresStore struct {
-	db *sql.DB
+	DB *sql.DB
 }
 
 
@@ -61,7 +61,7 @@ func (s *PostgresStore) CreateAccountTable() error {
 		balance DECIMAL(10, 2) NOT NULL DEFAULT 0.00,
 		created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 	)`
-	_, err := s.db.Exec(query)
+	_, err := s.DB.Exec(query)
 	return err
 }
 
@@ -73,14 +73,14 @@ func (s *PostgresStore) CreateAccount(acc *model.Account) error {
 	if acc.CreatedAt.IsZero() {
 		acc.CreatedAt = time.Now()
 	}
-	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt)
+	_, err := s.DB.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt)
 	return err
 }
 
 // ===== Delete Account by ID =====
 func (s *PostgresStore) DeleteAccount(id int) error {
 	query := `DELETE FROM account WHERE id = $1`
-	_, err := s.db.Exec(query, id)
+	_, err := s.DB.Exec(query, id)
 	return err
 }
 
@@ -90,21 +90,21 @@ func (s *PostgresStore) UpdateAccount(acc *model.Account) error {
 		UPDATE account 
 		SET first_name = $1, last_name = $2, number = $3, balance = $4, created_at = $5 
 		WHERE id = $6`
-	_, err := s.db.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt, acc.ID)
+	_, err := s.DB.Exec(query, acc.FirstName, acc.LastName, acc.Number, acc.Balance, acc.CreatedAt, acc.ID)
 	return err
 }
 
 // ===== Get One Account by ID =====
 func (s *PostgresStore) GetAccount(id int) (*model.Account, error) {
 	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
-	row := s.db.QueryRow(query, id)
+	row := s.DB.QueryRow(query, id)
 	return scanAccount(row)
 }
 
 // ===== Get All Accounts with Same ID (if needed) =====
 func (s *PostgresStore) GetAccountsByID(id int) ([]*model.Account, error) {
 	query := `SELECT id, first_name, last_name, number, balance, created_at FROM account WHERE id = $1`
-	rows, err := s.db.Query(query, id)
+	rows, err := s.DB.Query(query, id)
 	if err != nil {
 		return nil, err
 	}
@@ -128,14 +128,14 @@ func (s *PostgresStore) CreateUsersTable() error {
         password VARCHAR(100) NOT NULL,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )`
-	_, err := s.db.Exec(query)
+	_, err := s.DB.Exec(query)
 	return err
 }
 
 // ===== Get User by Username for Login =====
 func (s *PostgresStore) Userlogin(username, password string) (*model.User, error) {
 	query := `SELECT id, username, password FROM users WHERE username = $1`
-	row := s.db.QueryRow(query, username)
+	row := s.DB.QueryRow(query, username)
 
 	var user model.User
 	err := row.Scan(&user.ID, &user.Username, &user.Password)
@@ -161,7 +161,7 @@ func (s *PostgresStore) CreateUser(user *model.User) error {
         VALUES ($1, $2, $3)
         RETURNING id`
 
-	err := s.db.QueryRow(
+	err := s.DB.QueryRow(
 		query,
 		user.Username,
 		user.Password,
